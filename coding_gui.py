@@ -14,21 +14,22 @@ from sklearn import svm, datasets
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.utils.multiclass import unique_labels
-from bmdcluster import * 
+# from bmdcluster import * 
 
 #from clustering import clusterusingbmdtextoutput,clusterusingbmdpercentageoutput, clusterAveKMeans
 from clustering import clusterAveKMeans
+from reporting import create_analytics_graph, createtechnologyassociationgraph
 
-import plotly.graph_objects as go
-import plotly.express as px
-import networkx as nx
-import random
-import math
+# import plotly.graph_objects as go
+# import plotly.express as px
+# import networkx as nx
+#import random
+#import math
 import time
 from datetime import datetime
 
 class TechnologyLineItem:
-    def __init__(self, name, groupBox, presentFunction, notPresentFunction, columnNumber, technologyPresent, technologyNotPresent, filterlayout):
+    def __init__(self, name, groupBox, presentFunction, notPresentFunction, columnNumber, technologyPresent, technologyNotPresent, filterlayout, reportingwidget):
         self.name = name
         self.groupBox = groupBox
         self.presentFunction = presentFunction
@@ -38,7 +39,9 @@ class TechnologyLineItem:
         self.technologyPresent = technologyPresent
         self.technologyNotPresent = technologyNotPresent
         self.filtered = False
+        self.reporton = False
         self.filterwidget = filterlayout
+        self.reportingwidget = reportingwidget
     
     def setPresent(self):
         self.technologyNotPresent.setChecked(False)
@@ -56,6 +59,12 @@ class TechnologyLineItem:
     
     def disablefilter(self):
         self.filtered = False
+    
+    def enablereporton(self):
+        self.reporton = True
+    
+    def disablereporton(self):
+        self.reporton = False
 
 class MainWindow(QMainWindow):
     def linkToApp(self, codingApp):
@@ -110,46 +119,14 @@ class CodingApp:
         # tagging tab UI elements
         #---------------------------------
         self.TopLevelLayout = QHBoxLayout()
-        self.LeftSideLayout = QVBoxLayout()
-
-        # populate the top level layout in the tagging tab
         self.TextBox = QPlainTextEdit()
-        self.TextBox.setMinimumWidth(750)
-        self.TextBox.setMinimumHeight(800)
-        self.TopLevelLayout.addLayout(self.LeftSideLayout)
-        self.TopLevelLayout.addWidget(self.TextBox)
-
         self.DetailBoxLayout = QVBoxLayout()
-        self.DetailBoxLayout.setContentsMargins(0,0,0,0)
-        self.DetailBoxLayout.setSpacing(0)
-        self.DetailBoxLayout.setSizeConstraint(QLayout.SetFixedSize)
-        self.DetailBoxLayout.setAlignment( QtCore.Qt.AlignTop)
         self.TechnologiesBoxLayout = QVBoxLayout()
-        self.TechnologiesBoxLayout.setContentsMargins(0,0,20,0)
-        self.TechnologiesBoxLayout.setSpacing(0)
-        self.TechnologiesBoxLayout.setAlignment( QtCore.Qt.AlignTop)
-        
-        self.DetailWidget = QWidget()
-        self.DetailWidget.setLayout(self.DetailBoxLayout)
-        self.DetailWidget.setMaximumHeight(300)
-        self.TechnologiesBoxWidget = QWidget()
-        self.TechnologiesBoxWidget.setLayout(self.TechnologiesBoxLayout)
-        self.TechnologiesScrollArea = QScrollArea()
-        self.TechnologiesScrollArea.setWidget(self.TechnologiesBoxWidget)
-        self.TechnologiesScrollArea.setWidgetResizable(True)
-        self.TechnologiesScrollArea.horizontalScrollBar().setEnabled(False)
-        self.TechnologiesScrollArea.horizontalScrollBar().setVisible(False)
-        self.TechnologiesScrollArea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-
-        self.LeftSideLayout.addWidget(self.DetailWidget)
-        self.LeftSideLayout.addWidget(self.TechnologiesScrollArea)
+        self.addtablayoutelements(self.TopLevelLayout, self.TextBox, self.DetailBoxLayout, self.TechnologiesBoxLayout)
         
         # add a button that allows for the removal of a listing if it is not relevant
         self.removeListingButton = QPushButton("Remove Listing")
-        self.removeListingButton.setFixedSize(320, 18)
-        self.removeListingButton.clicked.connect(self.remove_listing)
-        self.removeListingButton.setEnabled(False)
-        self.DetailBoxLayout.addWidget(self.removeListingButton)
+        self.addlargebuttontolayout(self.removeListingButton, self.remove_listing, False, self.DetailBoxLayout)
 
         # populate the left side detail layout with the details box and the 
         self.BackButton = QPushButton("<--")
@@ -211,40 +188,10 @@ class CodingApp:
         # clustering tab UI elements
         #---------------------------------
         self.clusteringtoplevellayout = QHBoxLayout()
-        self.clusteringleftsidelayout = QVBoxLayout()
-
-        # populate the top level layout in the clustering tab
         self.clusteringtextbox = QPlainTextEdit()
-        self.clusteringtextbox.setMinimumWidth(750)
-        self.clusteringtextbox.setMinimumHeight(800)
-        self.clusteringtoplevellayout.addLayout(self.clusteringleftsidelayout)
-        self.clusteringtoplevellayout.addWidget(self.clusteringtextbox)
-
         self.clusteringcontrolslayout = QVBoxLayout()
-        self.clusteringcontrolslayout.setContentsMargins(0,0,0,0)
-        self.clusteringcontrolslayout.setSpacing(0)
-        self.clusteringcontrolslayout.setSizeConstraint(QLayout.SetFixedSize)
-        self.clusteringcontrolslayout.setAlignment( QtCore.Qt.AlignTop)
         self.clusteringtechnologieslayout = QVBoxLayout()
-        self.clusteringtechnologieslayout.setContentsMargins(0,0,20,0)
-        self.clusteringtechnologieslayout.setSpacing(0)
-        self.clusteringtechnologieslayout.setAlignment( QtCore.Qt.AlignTop)
-
-        self.clusteringcontrols = QWidget()
-        self.clusteringcontrols.setLayout(self.clusteringcontrolslayout)
-        self.clusteringcontrols.setMaximumHeight(300)
-        
-        self.clusteringtechnologies = QWidget()
-        self.clusteringtechnologies.setLayout(self.clusteringtechnologieslayout)
-        self.clusteringtechnologiesscrollarea = QScrollArea()
-        self.clusteringtechnologiesscrollarea.setWidget(self.clusteringtechnologies)
-        self.clusteringtechnologiesscrollarea.setWidgetResizable(True)
-        self.clusteringtechnologiesscrollarea.horizontalScrollBar().setEnabled(False)
-        self.clusteringtechnologiesscrollarea.horizontalScrollBar().setVisible(False)
-        self.clusteringtechnologiesscrollarea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-
-        self.clusteringleftsidelayout.addWidget(self.clusteringcontrols)
-        self.clusteringleftsidelayout.addWidget(self.clusteringtechnologiesscrollarea)
+        self.addtablayoutelements(self.clusteringtoplevellayout, self.clusteringtextbox, self.clusteringcontrolslayout, self.clusteringtechnologieslayout)
 
         # features that have less than the minimum row count will not be added into the clustering algorithm
         self.minimumrowcount = QLineEdit()
@@ -254,14 +201,6 @@ class CodingApp:
         self.numberofclusters = QLineEdit()
         self.createlabeltextboxpair("# clusters:", 160, 18, self.numberofclusters, "7", self.clusteringcontrolslayout)
 
-        # max technologies considered in a class - only the top most relevant technologies are used to define the class characteristics
-        # self.numberoftechnologies = QLineEdit()
-        # self.createlabeltextboxpair("max # tech per class:", 160, 18, self.numberoftechnologies, "10", self.clusteringcontrolslayout)
-        
-        # minimum percentage of members of class that have the technology for it to be considered
-        # self.minimumpercentage = QLineEdit()
-        # self.createlabeltextboxpair("min tech % representation:", 160, 18, self.minimumpercentage, "50", self.clusteringcontrolslayout)
-        
         # minimum instances that are found by the clustering algorithm for a class to be considered
         self.minimumclasssize = QLineEdit()
         self.createlabeltextboxpair("min class size:", 160, 18, self.minimumclasssize, "5", self.clusteringcontrolslayout)
@@ -272,10 +211,31 @@ class CodingApp:
         
         # add a button to start the clustering process
         self.startclustering = QPushButton("start clustering")
-        self.startclustering.setFixedSize(320, 18)
-        self.startclustering.clicked.connect(self.cluster)
-        self.startclustering.setEnabled(False)
-        self.clusteringcontrolslayout.addWidget(self.startclustering)
+        self.addlargebuttontolayout(self.startclustering, self.cluster, False, self.clusteringcontrolslayout)
+
+        #---------------------------------
+        # reporting tab UI elements
+        #---------------------------------
+        self.reportingtoplevellayout = QHBoxLayout()
+        self.reportingtextbox = QPlainTextEdit()
+        self.reportingcontrolslayout = QVBoxLayout()
+        self.reportingtechnologieslayout = QVBoxLayout()
+        self.addtablayoutelements(self.reportingtoplevellayout, self.reportingtextbox, self.reportingcontrolslayout, self.reportingtechnologieslayout)
+
+        # number of top technologies related to the chosen technologies to add to the report
+        self.numberoftoptechnologies = QLineEdit()
+        self.createlabeltextboxpair("Top # associated tech:", 160, 18, self.numberoftoptechnologies, "15", self.reportingcontrolslayout)
+        # thickest edge width
+        self.thickestedgewidth = QLineEdit()
+        self.createlabeltextboxpair("Max edge thickness:", 160, 18, self.thickestedgewidth, "15", self.reportingcontrolslayout)
+        # largest node size
+        self.largestnode = QLineEdit()
+        self.createlabeltextboxpair("Largest node:", 160, 18, self.largestnode, "100", self.reportingcontrolslayout)
+        # add a button to start the clustering process
+        self.runreport = QPushButton("run single tech report")
+        self.addlargebuttontolayout(self.runreport, self.springreportontech, False, self.reportingcontrolslayout)
+        # add a label to indicate the function of the tickboxes below
+        self.addlargelabeltolayout("select technology to report on", self.reportingcontrolslayout)
 
         #---------------------------------
         # Top level tab UI elements
@@ -287,15 +247,50 @@ class CodingApp:
         self.clusteringwindowtab = QWidget()
         self.clusteringwindowtab.setLayout(self.clusteringtoplevellayout)
 
+        self.reportingwindowtab = QWidget()
+        self.reportingwindowtab.setLayout(self.reportingtoplevellayout)
+
         self.WindowTabWidget = QTabWidget()
         self.WindowTabWidget.addTab(self.window, "tagging")
         self.WindowTabWidget.addTab(self.clusteringwindowtab, "clustering")
+        self.WindowTabWidget.addTab(self.reportingwindowtab, "reporting")
         self.windowFrame.setCentralWidget(self.WindowTabWidget)
 
 
         self.windowFrame.show()
         #self.window.show()
         self.app.exec_()
+
+    def addtablayoutelements(self, toplevellayout, textbox, detaillayout, technologieslayout):
+        leftsidelayout = QVBoxLayout()
+        # populate the top level layout with the left side layout and the text box
+        textbox.setMinimumWidth(750)
+        textbox.setMinimumHeight(800)
+        toplevellayout.addLayout(leftsidelayout)
+        toplevellayout.addWidget(textbox)
+
+        detaillayout.setContentsMargins(0,0,0,0)
+        detaillayout.setSpacing(0)
+        detaillayout.setSizeConstraint(QLayout.SetFixedSize)
+        detaillayout.setAlignment( QtCore.Qt.AlignTop)
+        technologieslayout.setContentsMargins(0,0,20,0)
+        technologieslayout.setSpacing(0)
+        technologieslayout.setAlignment(QtCore.Qt.AlignTop)
+        
+        detailwidget = QWidget()
+        detailwidget.setLayout(detaillayout)
+        detailwidget.setMaximumHeight(300)
+        technologiesboxwidget = QWidget()
+        technologiesboxwidget.setLayout(technologieslayout)
+        technologiesscrollarea = QScrollArea()
+        technologiesscrollarea.setWidget(technologiesboxwidget)
+        technologiesscrollarea.setWidgetResizable(True)
+        technologiesscrollarea.horizontalScrollBar().setEnabled(False)
+        technologiesscrollarea.horizontalScrollBar().setVisible(False)
+        technologiesscrollarea.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+
+        leftsidelayout.addWidget(detailwidget)
+        leftsidelayout.addWidget(technologiesscrollarea)
 
     def addmenuitem(self, actionname, functionname, shortcut):
         itemtoadd = QAction(actionname)
@@ -313,6 +308,18 @@ class CodingApp:
         if optionalwidget is not None:
             layoutbox.addWidget(optionalwidget)
         layout.addLayout(layoutbox)
+
+    def addlargebuttontolayout(self, button, funcpointer, enabledstate, layouttoaddto):
+        button.setFixedSize(320, 18)
+        button.clicked.connect(funcpointer)
+        button.setEnabled(enabledstate)
+        layouttoaddto.addWidget(button)
+
+    def addlargelabeltolayout(self, text, layouttoaddto):
+        label = QLabel(text)
+        label.setFixedSize(320, 18)
+        label.setAlignment(QtCore.Qt.AlignCenter)
+        layouttoaddto.addWidget(label)
 
     def createlabeltextboxpair(self, labeltitle, width, height, textfield, textfieldtext, detailboxlayout):
         keylabel = QLabel(labeltitle)
@@ -409,171 +416,47 @@ class CodingApp:
                         pathToDumpReports)
         self.clusteringtextbox.setPlainText(textresult)
 
+    def springreportontech(self):
+        # each of the technologies selected must be represented in each row. for each that is selected on in the report remove all rows where it is not 1
+        numberoftoptechnologies = int(self.numberoftoptechnologies.text())
+        thickestedgewidth = int(self.thickestedgewidth.text())
+        largestcircle = int(self.largestnode.text())
+        reportingdataframe= self.codingSessionData.copy()
+        reportingdataframe = reportingdataframe[reportingdataframe.Coded != False]
+        reportingdataframe = reportingdataframe.drop(columns=['ID', 'Coded'])
+        for technology in self.technologies:
+            if technology.reporton:
+                reportingdataframe = reportingdataframe[reportingdataframe[technology.name].isin([1])]
+        # now that the rows have been deleted, delete columns where there are no 1s
+        columnstodrop = []
+        columnswithsum = []
+        for column in reportingdataframe:
+            colsum = reportingdataframe[column].sum()
+            if colsum == 0:
+                columnstodrop.append(column)
+            else:
+                columnswithsum.append((column, colsum))
+        # removing the empty columns
+        reportingdataframe = reportingdataframe.drop(columns=columnstodrop)
+        #print(columnswithsum)
+        # removing the columns that are not in the top X number
+        toptechnologies = sorted(columnswithsum, key=lambda kv: kv[1], reverse=True) [:numberoftoptechnologies]
+        columnstodrop = list(reportingdataframe.columns)
+        for toptech in toptechnologies:
+            columnstodrop.remove(toptech[0])
+        reportingdataframe = reportingdataframe.drop(columns=columnstodrop)
+
+        #print(reportingdataframe)
+        createtechnologyassociationgraph(reportingdataframe, thickestedgewidth, largestcircle)
+
     def plot(self):
         # you can plot either the recreated frame or the original coded data as a plot
         clusterdataframe = self.codingSessionData.copy()
         clusterdataframe = clusterdataframe[clusterdataframe.Coded != False]
         clusterdataframe = clusterdataframe.drop(columns=['ID', 'Coded'])
-        self.create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'circular')
-        self.create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'spring')
+        create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'circular', self.technologies)
+        create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'spring', self.technologies)
     
-    def create_analytics_graph(self, recreatedFrame, sizeFilter, layoutType):
-        G = nx.Graph()
-        # reset a counter for each technology
-        for technology in self.technologies:
-            technology.counter = 0
-        for index, row in recreatedFrame.iterrows():
-            # each technology that is in the row needs a edge to each other technology in the row - just grab their names for now
-            technologyNames = []
-            for technology in self.technologies:
-                if recreatedFrame.at[index, technology.name] == 1:
-                        technology.counter = technology.counter + 1
-                        if technology.counter >= sizeFilter:
-                            technologyNames.append(technology.name)
-            # if only one technology is chosen, it will have no edges, so pop first. 
-            if len(technologyNames) > 0:
-                currentName = technologyNames.pop()
-                while len(technologyNames) > 0:
-                    for name in technologyNames:
-                        if G.has_edge(currentName, name):
-                            G[currentName][name]['count'] = G[currentName][name]['count'] + 1
-                        else:
-                            G.add_edge(currentName, name)
-                            G[currentName][name]['count'] = 1
-                    currentName = technologyNames.pop()
-        # only add nodes for technologies with at least 1 connection
-        self.technologies.sort(key= lambda x: x.counter, reverse=True) 
-
-        for technology in self.technologies:
-            if technology.counter >= sizeFilter:
-                G.add_node(technology.name)
-                #G.nodes[technology.name]['pos'] = (random.randint(0,800),random.randint(0,800))
-                G.nodes[technology.name]['name'] = technology.name
-
-        if layoutType == 'circular':
-            positions = nx.circular_layout(G)
-        else:
-            positions = nx.spring_layout(G)
-        #print(positions)
-
-        for position in positions:
-            G.nodes[position]['pos'] = (positions[position][0],positions[position][1])
-
-        for technology in self.technologies:
-            print(f"{technology.name}: {technology.counter}")
-        self.reorder_technologies()
-
-        traces = []
-        print('creating edges')
-        for edge in G.edges():
-            #print(f'creating edge {edge[0]} to {edge[1]}')
-            x0, y0 = G.node[edge[0]]['pos']
-            x1, y1 = G.node[edge[1]]['pos']
-            if x1 > x0 and y1 > y0:
-                x2 = x0 + (x1 - x0)/2 
-                y2 = y0 + (y1 - y0)/2
-            if x1 < x0 and y1 > y0:
-                x2 = x1 + (x0 - x1)/2 
-                y2 = y0 + (y1 - y0)/2
-            if x1 < x0 and y1 < y0:
-                x2 = x1 + (x0 - x1)/2 
-                y2 = y1 + (y0 - y1)/2
-            if x1 > x0 and y1 < y0:
-                x2 = x0 + (x1 - x0)/2 
-                y2 = y1 + (y0 - y1)/2
-            linelength = math.sqrt((x0-x1)*(x0-x1) + (y0-y1)*(y0-y1))
-            z = linelength * random.randint(10,20)/100
-            if x2 <= 0 and y2 <= 0:
-                x2 = x2 + z
-                y2 = y2 + z
-                colorSel = "rgba(255, 0, 0, 1)"
-            elif x2 >= 0 and y2 <= 0:
-                x2 = x2 - z
-                y2 = y2 + z
-                colorSel = "rgba(0, 255, 0, 1)"
-            elif x2 <= 0 and y2 >= 0:
-                x2 = x2 + z
-                y2 = y2 - z
-                colorSel = "rgba(0, 0, 255, 1)"
-            else:
-                x2 = x2 - z
-                y2 = y2 - z
-                colorSel = "rgba(100, 100, 100, 1)"
-            widthCount = G[edge[0]][edge[1]]['count']/2
-            traces.append(go.Scatter(
-                x=(x0,x2,x1),
-                y=(y0,y2,y1),
-                line=dict(width = widthCount, color=colorSel, shape = 'spline'),
-                hoverinfo='none',
-                mode='lines'
-            ))
-
-
-        node_x = []
-        node_y = []
-        node_text = []
-        for node in G.nodes():
-            x, y = G.node[node]['pos']
-            node_x.append(x)
-            node_y.append(y)
-            node_text.append(G.node[node]['name'])
-            #node_text.append(f"{G.node[node]['name']} : {G.node[node]['pos']}")
-        
-        print(f'creating node trace')
-        node_trace = go.Scatter(
-            x=node_x, y=node_y,
-            mode='markers+text',
-            hoverinfo='text',
-            marker_color = 'rgba(158, 0, 0, 1)',
-            opacity=1,
-            textfont=dict(size=18),
-            marker=dict(
-                showscale=True,
-                # colorscale options
-                #'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
-                #'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
-                #'Hot' | 'Blackbody' | 'Earth' | 'Electric' | 'Viridis' |
-                colorscale='Reds',
-                reversescale=True,
-                color='Black',
-                opacity=1,
-                size=30,
-                colorbar=dict(
-                    thickness=15,
-                    title='Node Connections',
-                    xanchor='left',
-                    titleside='right'
-                ),
-                line_width=2))
-
-        node_adjacencies = []
-        for node, adjacencies in enumerate(G.adjacency()):
-            node_adjacencies.append(len(adjacencies[1])*2)
-
-        node_trace.marker.size = node_adjacencies
-        node_trace.text = node_text
-
-        traces.append(node_trace)
-        print('creating plot')
-        fig = go.Figure(data=traces,
-             layout=go.Layout(
-                title='<br>Technology Relationship Graph',
-                titlefont_size=16,
-                showlegend=True,
-                hovermode='closest',
-                margin=dict(b=20,l=5,r=5,t=40),
-                annotations=[ dict(
-                    text="Python code: <a href='https://plot.ly/ipython-notebooks/network-graphs/'> https://plot.ly/ipython-notebooks/network-graphs/</a>",
-                    showarrow=False,
-                    xref="paper", yref="paper",
-                    x=0.005, y=-0.002 ) ],
-                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                )
-        fig.update_traces(textposition='top center')
-        print('showing plot')
-        fig.show()
-
     def load_session(self):
         print("load session")
         head, tail = os.path.split(self.path_to_scrape_session)
@@ -606,6 +489,7 @@ class CodingApp:
         self.FwdButton.setEnabled(True)
         self.removeListingButton.setEnabled(True)
         self.startclustering.setEnabled(True)
+        self.runreport.setEnabled(True)
         self.load_technology_columns()
         self.listingNumber = 0
         lastIndex = 0
@@ -676,9 +560,14 @@ class CodingApp:
         else:
             technologyLineItem.disablefilter()
 
+    def reportselectfunction(self, reportselectcheckbox, technologyLineItem):
+        if reportselectcheckbox.isChecked():
+            technologyLineItem.enablereporton()
+        else:
+            technologyLineItem.disablereporton()
+
     def add_technolgy(self, techName, techNumber, startSelected):
         # add the technology group to the tagging tab
-
         technologyLineLayout = QHBoxLayout()
         technologyLineLayout.setContentsMargins(0,0,0,0)
         technologyLineLayout.setSpacing(0)
@@ -703,7 +592,8 @@ class CodingApp:
         groupBox.setLayout(technologyLineLayout)
         groupBox.setMaximumHeight(35)
         technologyfilterline = QWidget()
-        technologyLineItem = TechnologyLineItem(techName, groupBox, yesFunction, noFunction, self.technologyCounter, technologyPresent, technologyNotPresent, technologyfilterline)
+        reportselectline = QWidget()
+        technologyLineItem = TechnologyLineItem(techName, groupBox, yesFunction, noFunction, self.technologyCounter, technologyPresent, technologyNotPresent, technologyfilterline, reportselectline)
         deleteTechnology.clicked.connect(technologyLineItem.deactivate)
         deleteTechnology.clicked.connect(self.reorder_technologies)
         self.technologies.append(technologyLineItem)
@@ -721,19 +611,32 @@ class CodingApp:
         technologyfilterlinelayout.addWidget(technologyfiltercheckbox)
         technologyfilterline.setLayout(technologyfilterlinelayout)
         self.clusteringtechnologieslayout.addWidget(technologyfilterline) 
+        # add the report controls
+        reportselectlinelayout = QHBoxLayout()
+        reportselectlinelayout.setContentsMargins(0,0,0,0)
+        reportselectlinelayout.setSpacing(0)
+        reportselectlabel = QLabel(techName)
+        reportselectlabel.setMinimumWidth(150)
+        reportselectcheckbox = QCheckBox()
+        reportselectfunction = lambda: self.reportselectfunction(reportselectcheckbox, technologyLineItem)
+        reportselectcheckbox.stateChanged.connect(reportselectfunction)
+        reportselectlinelayout.addWidget(reportselectlabel)
+        reportselectlinelayout.addWidget(reportselectcheckbox)
+        reportselectline.setLayout(reportselectlinelayout)
+        self.reportingtechnologieslayout.addWidget(reportselectline) 
         
-
-
     def reorder_technologies(self):
          # remove all of the line items you had except for the technology add line, sort them by name, and re-add them
         for technology in self.technologies:
             self.TechnologiesBoxLayout.removeWidget(technology.groupBox)
             self.clusteringtechnologieslayout.removeWidget(technology.filterwidget)
+            self.reportingtechnologieslayout.removeWidget(technology.reportingwidget)
         self.technologies.sort(key= lambda x: x.name.lower()) 
         self.technologies.sort(key= lambda x: x.active, reverse=True) # move deactivated items to the end of the list
         for technology in self.technologies:
             self.TechnologiesBoxLayout.addWidget(technology.groupBox)
             self.clusteringtechnologieslayout.addWidget(technology.filterwidget) 
+            self.reportingtechnologieslayout.addWidget(technology.reportingwidget)
             if not technology.active:
                 technology.groupBox.setEnabled(False)
 
