@@ -1,0 +1,8 @@
+MS SQL is used as my generic SQL - to fix this
+ORACLE sql extention should be added and reviewed
+locations should be cleaned up as well
+Where a technology version is specified the core technology is chosen
+No Tensorflow, but positions like "machine learning engineer" are there and not specified
+remote positions are kept, but positions for emigration are removed
+ABAP covers BAPI and ABAP OO programming
+positions marked as copies removed
