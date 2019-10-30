@@ -1,3 +1,5 @@
 bmdcluster/
 Documents/
 data/
+.vscode/
+__pycache__
