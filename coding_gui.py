@@ -109,11 +109,11 @@ class CodingApp:
         open = self.addmenuitem("&Open", self.show_open_file_dialog, QKeySequence.Open)
         save = self.addmenuitem("&Save", self.saveSession, QKeySequence.Save)
         #cluster = menuitem("&Cluster", self.cluster, None)
-        plot = self.addmenuitem("&Plot", self.plot, None)
-        file_menu.addAction(open)
-        file_menu.addAction(save)
-        #file_menu.addAction(cluster)
-        file_menu.addAction(plot)
+        # plot = self.addmenuitem("&Plot", self.plot, None)
+        # file_menu.addAction(open)
+        # file_menu.addAction(save)
+        # file_menu.addAction(cluster)
+        # file_menu.addAction(plot)
  
         #---------------------------------
         # tagging tab UI elements
@@ -127,8 +127,7 @@ class CodingApp:
         # add a button that allows for the removal of a listing if it is not relevant
         self.removeListingButton = QPushButton("Remove Listing")
         self.addlargebuttontolayout(self.removeListingButton, self.remove_listing, False, self.DetailBoxLayout)
-
-        # populate the left side detail layout with the details box and the 
+        # add the back and forth paging buttons
         self.BackButton = QPushButton("<--")
         self.FwdButton = QPushButton("-->")
         self.BackButton.setFixedSize(160, 18)
@@ -138,39 +137,30 @@ class CodingApp:
         self.BackButton.setEnabled(False)
         self.FwdButton.setEnabled(False)
         self.addwidgetpairtolayout(self.BackButton, self.FwdButton, self.DetailBoxLayout)
-
         # add in a textbox to allow the the number of clusters to be set
         self.ClusterSizeText = QLineEdit()
         self.createlabeltextboxpair("Clusters:", 160, 18, self.ClusterSizeText, "7", self.DetailBoxLayout)
-
         # add in a textbox to allow the the graph node filter size to be set
         self.GraphFilterText = QLineEdit()
         self.createlabeltextboxpair("FilterSize:", 160, 18, self.GraphFilterText, "3", self.DetailBoxLayout)
-
         # add in the ID labels
         self.IdValueLabel = QLabel("Placeholder Label")
         self.createlabelpair("ID:", 160, 18, self.IdValueLabel, self.DetailBoxLayout)
-
         # add in the title labels
         self.TitleValueLabel = QLabel("Placeholder Title")
         self.createlabelpair("TITLE:", 160, 18, self.TitleValueLabel, self.DetailBoxLayout)
-
         # add in the company labels
         self.CompanyValueLabel = QLabel("Placeholder Company")
         self.createlabelpair("COMPANY:", 160, 18, self.CompanyValueLabel, self.DetailBoxLayout)
-        
         # add in the first detail labels
         self.Detail1ValueLabel = QLabel("Detail Placeholder")
         self.createlabelpair("DETAIL1:", 160, 18, self.Detail1ValueLabel, self.DetailBoxLayout)
-
         # add in the second detail labels
         self.Detail2ValueLabel = QLabel("Detail Placeholder")
         self.createlabelpair("DETAIL2:", 160, 18, self.Detail2ValueLabel, self.DetailBoxLayout)
-
         # add in the third detail labels
         self.Detail3ValueLabel = QLabel("Detail Placeholder")
         self.createlabelpair("DETAIL3:", 160, 18, self.Detail3ValueLabel, self.DetailBoxLayout)
-
         # add in the fourth detail labels
         self.Detail4ValueLabel = QLabel("Detail Placeholder")
         self.createlabelpair("DETAIL4:", 160, 18, self.Detail4ValueLabel, self.DetailBoxLayout)
@@ -196,19 +186,18 @@ class CodingApp:
         # features that have less than the minimum row count will not be added into the clustering algorithm
         self.minimumrowcount = QLineEdit()
         self.createlabeltextboxpair("min rows per tech:", 160, 18, self.minimumrowcount, "3", self.clusteringcontrolslayout)
-        
         # the number of clusters that will be created during each iteration of the clustering algorithm
         self.numberofclusters = QLineEdit()
         self.createlabeltextboxpair("# clusters:", 160, 18, self.numberofclusters, "7", self.clusteringcontrolslayout)
-
         # minimum instances that are found by the clustering algorithm for a class to be considered
         self.minimumclasssize = QLineEdit()
         self.createlabeltextboxpair("min class size:", 160, 18, self.minimumclasssize, "5", self.clusteringcontrolslayout)
-
         # number of iterations to run the clustering algorithm to create the master classes
         self.clusteringiterations = QLineEdit()
         self.createlabeltextboxpair("# clustering iterations:", 160, 18, self.clusteringiterations, "50", self.clusteringcontrolslayout)
-        
+        # number of technologies to plot in the bar graphs report for the classes
+        self.numtechtoplot = QLineEdit()
+        self.createlabeltextboxpair("# tech to plot per class:", 160, 18, self.numtechtoplot, "15", self.clusteringcontrolslayout)
         # add a button to start the clustering process
         self.startclustering = QPushButton("start clustering")
         self.addlargebuttontolayout(self.startclustering, self.cluster, False, self.clusteringcontrolslayout)
@@ -224,7 +213,7 @@ class CodingApp:
 
         # number of top technologies related to the chosen technologies to add to the report
         self.numberoftoptechnologies = QLineEdit()
-        self.createlabeltextboxpair("Top # associated tech:", 160, 18, self.numberoftoptechnologies, "15", self.reportingcontrolslayout)
+        self.createlabeltextboxpair("# top associated tech:", 160, 18, self.numberoftoptechnologies, "15", self.reportingcontrolslayout)
         # thickest edge width
         self.thickestedgewidth = QLineEdit()
         self.createlabeltextboxpair("Max edge thickness:", 160, 18, self.thickestedgewidth, "15", self.reportingcontrolslayout)
@@ -232,10 +221,11 @@ class CodingApp:
         self.largestnode = QLineEdit()
         self.createlabeltextboxpair("Largest node:", 160, 18, self.largestnode, "100", self.reportingcontrolslayout)
         # add a button to start the clustering process
-        self.runreport = QPushButton("run single tech report")
+        self.runreport = QPushButton("run tech association report")
         self.addlargebuttontolayout(self.runreport, self.springreportontech, False, self.reportingcontrolslayout)
         # add a label to indicate the function of the tickboxes below
         self.addlargelabeltolayout("select technology to report on", self.reportingcontrolslayout)
+
 
         #---------------------------------
         # Top level tab UI elements
@@ -255,6 +245,8 @@ class CodingApp:
         self.WindowTabWidget.addTab(self.clusteringwindowtab, "clustering")
         self.WindowTabWidget.addTab(self.reportingwindowtab, "reporting")
         self.windowFrame.setCentralWidget(self.WindowTabWidget)
+
+        
 
 
         self.windowFrame.show()
@@ -413,7 +405,8 @@ class CodingApp:
                         self.minimumrowcount.text(), 
                         self.numberofclusters.text(), 
                         self.minimumclasssize.text(), 
-                        pathToDumpReports)
+                        pathToDumpReports,
+                        self.numtechtoplot.text())
         self.clusteringtextbox.setPlainText(textresult)
 
     def springreportontech(self):
@@ -424,9 +417,11 @@ class CodingApp:
         reportingdataframe= self.codingSessionData.copy()
         reportingdataframe = reportingdataframe[reportingdataframe.Coded != False]
         reportingdataframe = reportingdataframe.drop(columns=['ID', 'Coded'])
+        selectedTech = []
         for technology in self.technologies:
             if technology.reporton:
                 reportingdataframe = reportingdataframe[reportingdataframe[technology.name].isin([1])]
+                selectedTech.append(technology.name)
         # now that the rows have been deleted, delete columns where there are no 1s
         columnstodrop = []
         columnswithsum = []
@@ -447,15 +442,15 @@ class CodingApp:
         reportingdataframe = reportingdataframe.drop(columns=columnstodrop)
 
         #print(reportingdataframe)
-        createtechnologyassociationgraph(reportingdataframe, thickestedgewidth, largestcircle)
+        createtechnologyassociationgraph(reportingdataframe, thickestedgewidth, largestcircle, selectedTech)
 
-    def plot(self):
-        # you can plot either the recreated frame or the original coded data as a plot
-        clusterdataframe = self.codingSessionData.copy()
-        clusterdataframe = clusterdataframe[clusterdataframe.Coded != False]
-        clusterdataframe = clusterdataframe.drop(columns=['ID', 'Coded'])
-        create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'circular', self.technologies)
-        create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'spring', self.technologies)
+    # def plot(self):
+    #     # you can plot either the recreated frame or the original coded data as a plot
+    #     clusterdataframe = self.codingSessionData.copy()
+    #     clusterdataframe = clusterdataframe[clusterdataframe.Coded != False]
+    #     clusterdataframe = clusterdataframe.drop(columns=['ID', 'Coded'])
+    #     create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'circular', self.technologies)
+    #     create_analytics_graph(clusterdataframe, int(self.GraphFilterText.text()), 'spring', self.technologies)
     
     def load_session(self):
         print("load session")

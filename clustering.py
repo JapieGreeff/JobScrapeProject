@@ -13,7 +13,7 @@ import shutil
 from docx import Document
 from docx.shared import Inches
 
-def clusterAveKMeans(numberiterations, codingsessiondata, technologies, minrowcount, noclusters, minclasssize, pathToDumpReports):
+def clusterAveKMeans(numberiterations, codingsessiondata, technologies, minrowcount, noclusters, minclasssize, pathToDumpReports, numtechtoplot):
         class FoundClass:
             # create the class the first time you find it
             def __init__(self, classdictionary, classsize):
@@ -42,9 +42,9 @@ def clusterAveKMeans(numberiterations, codingsessiondata, technologies, minrowco
                 return meansquareerrorrunningtotal / len(self.classdictionary.keys())
 
             #plot the data as a bar chart using plotly express
-            def plotbarchart(self, pathtowriteto):
+            def plotbarchart(self, pathtowriteto, numtechtoplot):
                 # first create a dataframe from the dictionary
-                topfifteentechnologies = sorted(self.classdictionary.items(), key=lambda kv: kv[1], reverse=True) [:15]
+                topfifteentechnologies = sorted(self.classdictionary.items(), key=lambda kv: kv[1], reverse=True) [:int(numtechtoplot)]
                 df = pd.DataFrame()
                 classdictasdict = dict(topfifteentechnologies)
                 leftaxisname = f'percentage (n={math.ceil(self.classsize)})'
@@ -134,7 +134,7 @@ def clusterAveKMeans(numberiterations, codingsessiondata, technologies, minrowco
         for idx, averageclass in enumerate(averagedClasses):
             pathtowriteimage = pathToDumpReports + f'/class{idx}_{math.ceil(averageclass.classsize)}.png'
             print(f"writing {pathtowriteimage}")
-            averageclass.plotbarchart(pathtowriteimage)
+            averageclass.plotbarchart(pathtowriteimage, numtechtoplot)
             document.add_picture(pathtowriteimage, width=Inches(6), height=Inches(4))
             time.sleep(1)
         documentpath = pathToDumpReports + '/barcharts.docx'

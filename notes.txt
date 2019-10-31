@@ -6,3 +6,26 @@ No Tensorflow, but positions like "machine learning engineer" are there and not 
 remote positions are kept, but positions for emigration are removed
 ABAP covers BAPI and ABAP OO programming
 positions marked as copies removed
+
+
+maxtechnologiesinaclass
+technologypercentagecutoff
+
+addwidgetpairtolayout
+
+- clustering
+- pick a technology and do a network graph from that
+- answer the email about lecture timetable as your subject is in the wrong venue
+- answer stephanie from code combat and ask about export of full class thing
+- answer pension fund guy
+- Graph colour for the selected technologies
+rename technologies tab
+Abstract educon challenges
+maybe do another abstract for educon?
+Paper for the job scrape project
+M Thesis
+Jon review thesis doc
+think about saskia and what to do
+brandon and josh meeting with carin
+think about conference talk invitation - is it still in time?
+CMPG313

@@ -4,7 +4,7 @@ import networkx as nx
 import math
 import random
 
-def createsplinelines(G, thickestedge, maxedgewidth):
+def createsplinelines(G, thickestedge, maxedgewidth, selectedTech):
     traces = []
     divider = thickestedge / maxedgewidth
     print('creating edges')
@@ -29,30 +29,33 @@ def createsplinelines(G, thickestedge, maxedgewidth):
         if x2 <= 0 and y2 <= 0:
             x2 = x2 + z
             y2 = y2 + z
-            colorSel = "rgba(100, 100, 100, 0.4)"
         elif x2 >= 0 and y2 <= 0:
             x2 = x2 - z
             y2 = y2 + z
-            colorSel = "rgba(100, 100, 100, 0.4)"
         elif x2 <= 0 and y2 >= 0:
             x2 = x2 + z
             y2 = y2 - z
-            colorSel = "rgba(100, 100, 100, 0.4)"
         else:
             x2 = x2 - z
             y2 = y2 - z
-            colorSel = "rgba(100, 100, 100, 0.4)"
+        if edge[0] in selectedTech or edge[1] in selectedTech:
+            colorSel = "rgba(255, 0, 0, 1)"
+            opac = 1
+        else:
+            colorSel = "rgba(0, 0, 255, 0.4)"
+            opac = 0.4
         widthCount = max(G[edge[0]][edge[1]]['count']/divider, 1)
         traces.append(go.Scatter(
             x=(x0,x2,x1),
             y=(y0,y2,y1),
+            opacity= opac,
             line=dict(width = widthCount, color=colorSel, shape = 'spline'),
             hoverinfo='none',
             mode='lines'
         ))
     return traces
 
-def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize):
+def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize, selectedTech):
     G = nx.Graph()
     thickestedge = 0
     for index, row in dataframe.iterrows():
@@ -82,7 +85,7 @@ def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize):
     for position in positions:
 	    G.nodes[position]['pos'] = (positions[position][0],positions[position][1])
     # make all the traces splines 
-    traces = createsplinelines(G, thickestedge, maxedgewidth)
+    traces = createsplinelines(G, thickestedge, maxedgewidth, selectedTech)
     
     node_x = []
     node_y = []
@@ -103,11 +106,11 @@ def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize):
         x=node_x, y=node_y,
         mode='markers+text',
         hoverinfo='text',
-        marker_color = 'rgba(158, 0, 0, 1)',
+        marker_color = 'rgba(0, 158, 0, 1)',
         opacity=1,
         textfont=dict(size=18),
         marker=dict(
-            showscale=True,
+            showscale=False,
             # colorscale options
             #'Greys' | 'YlGnBu' | 'Greens' | 'YlOrRd' | 'Bluered' | 'RdBu' |
             #'Reds' | 'Blues' | 'Picnic' | 'Rainbow' | 'Portland' | 'Jet' |
@@ -117,12 +120,12 @@ def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize):
             color='Black',
             opacity=1,
             size=30,
-            colorbar=dict(
-                thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
-            ),
+            # colorbar=dict(
+            #     thickness=15,
+            #     title='Node Connections',
+            #     xanchor='left',
+            #     titleside='right'
+            # ),
             line_width=2))
 
     # node_adjacencies = []
@@ -144,6 +147,8 @@ def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize):
             showlegend=False,
             hovermode='closest',
             margin=dict(b=20,l=5,r=5,t=40),
+            paper_bgcolor='rgba(0, 0, 0, 0)',
+            plot_bgcolor='rgba(0, 0, 0, 0)',
             annotations=[ dict(
                 text="Python code: <a href='https://plot.ly/ipython-notebooks/network-graphs/'> https://plot.ly/ipython-notebooks/network-graphs/</a>",
                 showarrow=False,
