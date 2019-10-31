@@ -3,6 +3,8 @@ import plotly.express as px
 import networkx as nx
 import math
 import random
+import csv   
+import pandas as pd
 
 def createsplinelines(G, thickestedge, maxedgewidth, selectedTech):
     traces = []
@@ -161,6 +163,28 @@ def createtechnologyassociationgraph(dataframe, maxedgewidth, maxnodesize, selec
     print('showing plot')
     fig.show()
 
+def techcomparisonreport(reportingdataframe, pathtowriteto = None):
+    # first create a dataframe from the dictionary
+    reportingdict = {}
+    for column in reportingdataframe:
+        reportingdict[column] = reportingdataframe[column].sum()
+    sortedtech = sorted(reportingdict.items(), key=lambda kv: kv[1], reverse=True)
+    df = pd.DataFrame()
+    sorteddict = dict(sortedtech)
+    df['technologies'] = sorteddict.keys()
+    df['occurances'] = sorteddict.values()
+    fig = px.bar(df, x='technologies', y='occurances')
+    if pathtowriteto is not None:
+        fig.write_image(pathtowriteto)
+    else:
+        fig.show()
+
+def exportsessionfiles(reportingdataframe, pathToDumpReports):
+        pathtosessiontechsum = pathToDumpReports+'/techSums.csv'
+        with open(pathtosessiontechsum, mode='w', newline='\n', encoding='utf-8') as sessionfile:
+            file_writer = csv.writer(sessionfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for column in reportingdataframe:
+                file_writer.writerow([f'{column}', f'{reportingdataframe[column].sum()}'])
 
 def create_analytics_graph(recreatedFrame, sizeFilter, layoutType, technologies):
         G = nx.Graph()

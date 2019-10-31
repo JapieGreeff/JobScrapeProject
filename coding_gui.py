@@ -18,7 +18,7 @@ from sklearn.utils.multiclass import unique_labels
 
 #from clustering import clusterusingbmdtextoutput,clusterusingbmdpercentageoutput, clusterAveKMeans
 from clustering import clusterAveKMeans
-from reporting import create_analytics_graph, createtechnologyassociationgraph
+from reporting import create_analytics_graph, createtechnologyassociationgraph, techcomparisonreport, exportsessionfiles
 
 # import plotly.graph_objects as go
 # import plotly.express as px
@@ -108,12 +108,8 @@ class CodingApp:
         file_menu = self.windowFrame.menuBar().addMenu("&File")
         open = self.addmenuitem("&Open", self.show_open_file_dialog, QKeySequence.Open)
         save = self.addmenuitem("&Save", self.saveSession, QKeySequence.Save)
-        #cluster = menuitem("&Cluster", self.cluster, None)
-        # plot = self.addmenuitem("&Plot", self.plot, None)
-        # file_menu.addAction(open)
-        # file_menu.addAction(save)
-        # file_menu.addAction(cluster)
-        # file_menu.addAction(plot)
+        file_menu.addAction(open)
+        file_menu.addAction(save)
  
         #---------------------------------
         # tagging tab UI elements
@@ -166,13 +162,24 @@ class CodingApp:
         self.createlabelpair("DETAIL4:", 160, 18, self.Detail4ValueLabel, self.DetailBoxLayout)
         
         # populate the technology layout with the add technology text box and button
-        self.TechnologyAddTextField = QLineEdit()
+        self.TechnologyToRename = QLineEdit("tech to rename")
+        self.TechnologyNewName = QLineEdit("new name")
+        self.TechnologyRenameButton = QPushButton("Rename")
+        self.TechnologyToRename.setFixedSize(107, 18)
+        self.TechnologyNewName.setFixedSize(107, 18)
+        self.TechnologyRenameButton.setFixedSize(106, 20)
+        self.TechnologyRenameButton.clicked.connect(self.renametechnology)
+        self.TechnologyRenameButton.setEnabled(False) #disable the technology add button till you have loaded a session
+        self.addwidgetpairtolayout(self.TechnologyRenameButton, self.TechnologyToRename, self.DetailBoxLayout, self.TechnologyNewName )
+
+        # populate the technology layout with the add technology text box and button
+        self.TechnologyAddTextField = QLineEdit("tech to add")
         self.TechnologyAddButton = QPushButton("+")
         self.TechnologyAddButton.clicked.connect(self.add_technology_lineItem)
         self.TechnologyAddTextField.setFixedSize(160, 18)
-        self.TechnologyAddButton.setFixedSize(160, 18)
+        self.TechnologyAddButton.setFixedSize(160, 20)
         self.TechnologyAddButton.setEnabled(False) #disable the technology add button till you have loaded a session
-        self.addwidgetpairtolayout(self.TechnologyAddTextField, self.TechnologyAddButton, self.DetailBoxLayout)
+        self.addwidgetpairtolayout(self.TechnologyAddButton, self.TechnologyAddTextField, self.DetailBoxLayout)
 
         #---------------------------------
         # clustering tab UI elements
@@ -223,6 +230,12 @@ class CodingApp:
         # add a button to start the clustering process
         self.runreport = QPushButton("run tech association report")
         self.addlargebuttontolayout(self.runreport, self.springreportontech, False, self.reportingcontrolslayout)
+        # add a button to start the clustering process
+        self.runcomparisonbargraph = QPushButton("run tech comparison report")
+        self.addlargebuttontolayout(self.runcomparisonbargraph, self.comparisonreport, False, self.reportingcontrolslayout)
+        # add a button to start the export of the coding session's data
+        self.exportcodingsession = QPushButton("Export coding session ...")
+        self.addlargebuttontolayout(self.exportcodingsession, self.exportSession, False, self.reportingcontrolslayout)
         # add a label to indicate the function of the tickboxes below
         self.addlargelabeltolayout("select technology to report on", self.reportingcontrolslayout)
 
@@ -347,6 +360,16 @@ class CodingApp:
             sessionFile.close()
             self.windowFrame.clean()
 
+    def exportSession(self):
+        if self.codingSessionData is not None:
+            folder = str(QFileDialog.getExistingDirectory(self.windowFrame, "Select Directory"))
+            reportingdataframe= self.codingSessionData.copy()
+            reportingdataframe = reportingdataframe[reportingdataframe.Coded != False]
+            reportingdataframe = reportingdataframe.drop(columns=['ID', 'Coded'])
+            exportsessionfiles(reportingdataframe, folder)
+
+
+
     def remove_listing(self):
         self.codingSessionData.drop(self.listingNumber, inplace=True)
         currentIndex = self.listingNumber
@@ -408,6 +431,37 @@ class CodingApp:
                         pathToDumpReports,
                         self.numtechtoplot.text())
         self.clusteringtextbox.setPlainText(textresult)
+
+    def comparisonreport(self):
+        reportingdataframe= self.codingSessionData.copy()
+        reportingdataframe = reportingdataframe[reportingdataframe.Coded != False]
+        reportingdataframe = reportingdataframe.drop(columns=['ID', 'Coded'])
+        selectedTech = []
+        columnstodrop = []
+        for technology in self.technologies:
+            if technology.active:
+                if technology.reporton:
+                    # reportingdataframe = reportingdataframe[reportingdataframe[technology.name].isin([1])]
+                    selectedTech.append(technology.name)
+                else:
+                    columnstodrop.append(technology.name)
+        reportingdataframe = reportingdataframe.drop(columns=columnstodrop)
+        techcomparisonreport(reportingdataframe)
+        # # first create a dataframe from the dictionary
+        # reportingdict = {}
+        # for column in reportingdataframe:
+        #     reportingdict[column] = reportingdataframe[column].sum()
+        # sortedtech = sorted(reportingdict.items(), key=lambda kv: kv[1], reverse=True)
+        # df = pd.DataFrame()
+        # sorteddict = dict(sortedtech)
+        # df['technologies'] = sortedtech.keys()
+        # df['occurances'] = sortedtech.values()
+        # fig = px.bar(df, x='technologies', y='occurances')
+        # if pathtowriteto is not None:
+        #     fig.write_image(pathtowriteto)
+        # else:
+        #     fig.show()
+
 
     def springreportontech(self):
         # each of the technologies selected must be represented in each row. for each that is selected on in the report remove all rows where it is not 1
@@ -485,6 +539,9 @@ class CodingApp:
         self.removeListingButton.setEnabled(True)
         self.startclustering.setEnabled(True)
         self.runreport.setEnabled(True)
+        self.runcomparisonbargraph.setEnabled(True)
+        self.TechnologyRenameButton.setEnabled(True)
+        self.exportcodingsession.setEnabled(True)
         self.load_technology_columns()
         self.listingNumber = 0
         lastIndex = 0
@@ -588,7 +645,7 @@ class CodingApp:
         groupBox.setMaximumHeight(35)
         technologyfilterline = QWidget()
         reportselectline = QWidget()
-        technologyLineItem = TechnologyLineItem(techName, groupBox, yesFunction, noFunction, self.technologyCounter, technologyPresent, technologyNotPresent, technologyfilterline, reportselectline)
+        technologyLineItem = TechnologyLineItem(techName, groupBox, yesFunction, noFunction, techNumber, technologyPresent, technologyNotPresent, technologyfilterline, reportselectline)
         deleteTechnology.clicked.connect(technologyLineItem.deactivate)
         deleteTechnology.clicked.connect(self.reorder_technologies)
         self.technologies.append(technologyLineItem)
@@ -653,6 +710,22 @@ class CodingApp:
             self.windowFrame.dirty()
             print(f"Added {self.TechnologyAddTextField.text()} technology")
             print(self.codingSessionData)
+
+    def renametechnology(self):
+        # first find the column and technology that is being searched for - only continue if it is found
+        techtorename = self.TechnologyToRename.text()
+        newname = self.TechnologyNewName.text()
+        foundtech = next((x for x in self.technologies if x.name == techtorename), None)
+        if foundtech is not None and len(newname) > 0:
+            # add a new tech with the same column number as the old tech but the new name and deactivate the old tech
+            columnnumber = foundtech.columnNumber
+            self.add_technolgy(newname, columnnumber, False)
+            foundtech.deactivate()
+            self.reorder_technologies()
+            # finally rename the column in the dataframe
+            self.codingSessionData.rename(columns={techtorename:newname}, inplace=True)
+            self.windowFrame.dirty()
+
 
 if __name__ == "__main__":
     # execute only if run as a script
