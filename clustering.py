@@ -3,7 +3,7 @@ Clustering the data using the BMD algorithm.
 """
 import pandas as pd
 import numpy as np
-from bmdcluster import * 
+from bmdcluster import blockdiagonalBMD
 import csv   
 import plotly.express as px
 import time
@@ -188,8 +188,16 @@ def clusterusingbmdpercentageoutput(sessiondata, minimumcount, noclusters, maxte
 
     # perform the clustering using the BMD algorithm
     numberOfClusters = int(noclusters)
-    BMD_model = bmdcluster(n_clusters = numberOfClusters, method = 'block_diagonal', B_ident = True, use_bootstrap = True, b = 10)
-    cost, A, B = BMD_model.fit(clusterdataframe.values, verbose = 1, return_results= True)
+    # previous version of bmdcluster
+    #BMD_model = bmdcluster(n_clusters = numberOfClusters, method = 'block_diagonal', B_ident = True, use_bootstrap = True, b = 10)
+    #cost, A, B = BMD_model.fit(clusterdataframe.values, verbose = 1, return_results= True)
+    
+    # updated bmdcluster
+    BMD_model = blockdiagonalBMD(n_clusters=numberOfClusters, max_iter=100, use_bootstrap=True, b=10)
+    BMD_model.fit(clusterdataframe.values, verbose = True)
+    cost = BMD_model.cost
+    A = BMD_model.A
+    B = BMD_model.B
     
     # create an array of arrays for the features that are assigned to each cluster, as well as an array that holds the count of data rows each cluster has assigned to it
     clusterFeatures = []
